@@ -1,9 +1,9 @@
 name: Conversion Trend Analyzer
 
-# Runs daily at 1 PM IST (7:30 AM UTC)
+# Runs daily at 1:15 PM IST (7:45 AM UTC) - staggered to avoid conflict with NCD (1 PM)
 on:
   schedule:
-    - cron: '30 7 * * *'
+    - cron: '45 7 * * *'
   workflow_dispatch:
 
 jobs:
@@ -29,6 +29,7 @@ jobs:
           pip install selenium webdriver-manager pillow google-api-python-client
 
       - name: Setup Chrome for WhatsApp image conversion
+        id: chrome
         uses: browser-actions/setup-chrome@v2
         with:
           install-chromedriver: true
@@ -50,4 +51,13 @@ jobs:
         env:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
           WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
         run: python conversion_trend_analyzer.py
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conversion-analyzer-logs
+          path: "*.log"
+          if-no-files-found: ignore
